@@ -69,12 +69,6 @@ class QuestionClassify:
         return self.question_mode_dict[category]
 
 
-import re
-import os
-
-import re
-import os
-
 def load_train_data():
     train_x = []
     train_y = []
@@ -102,4 +96,4 @@ def load_train_data():
 
 # 调用加载数据的方法来确认标签加载正确
 train_x, train_y = load_train_data()
-print(f"训练标签列表: {train_y}")
+# print(f"训练标签列表: {train_y}")

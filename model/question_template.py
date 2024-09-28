@@ -27,6 +27,7 @@ class QuestionTemplate:
 
     def get_question_answer(self, question, template_id):
         question = nlp_util.question_posseg(question)
+        print(f"问题分词结果{question}")
         question_word, question_flag = [], []
         # 遍历词性标注后的question
         for one in question:
@@ -38,14 +39,18 @@ class QuestionTemplate:
         self.question_word = question_word
         self.question_flag = question_flag
         self.raw_question = question
+        print(f"self.question_word = {self.question_word} && self.question_flag = {self.question_flag} && self.raw_question = {self.raw_question}")
         answer = self.q_template_dict[template_id]()
         if len(answer) == 0:
             answer = "抱歉，我也不知道"
         return answer
 
     # 利用get_question_answer的分词结果
-    def get_movie_name(self, type_str):
+    # 获取电影名字
+    def get_movie_name(self):
+        # 获取nm在原问题中的下标
         tag_index = self.question_flag.index("nm")
+        # 获取电影名称
         movie_name = self.question_word[tag_index]
         return movie_name
 
@@ -66,48 +71,57 @@ class QuestionTemplate:
         x = re.sub(r'\D', "", "".join(self.question_word))
         return x
 
+
     # 0:nm 评分
     def get_movie_rating(self):
         # 获取电影名称，这个是在原问题中抽取的
         movie_name = self.get_movie_name()
-        cql = f"match (m:Movie)-[]->() where m.title='{movie_name}' return m.rating"
+        # cql = f"match (m:Movie)-[]->() where m.title='{movie_name}' return m.rating"
+        cql = f"MATCH (m:Movie) WHERE m.title='{movie_name}' RETURN m.rating"
         print(cql)
         answer = self.neo4j_conn.run(cql)[0]
         print(answer)
-        answer = round(answer, 2) #保留两位小数
+        answer = round(answer, 2)
         final_answer = movie_name + "电影评分为" + str(answer) + "分！"
         return final_answer
 
-    # 1:nm 上映时间
+        # 1:nm 上映时间
+
     def get_movie_releasedate(self):
         movie_name = self.get_movie_name()
-        cql = f"match(m:Movie)-[]->() where m.title='{movie_name}' return m.releasedate"
+        # cql = f"match(m:Movie)-[]->() where m.title='{movie_name}' return m.releasedate"
+        cql = f"MATCH (m:Movie) WHERE m.title='{movie_name}' RETURN m.releasedate"
         print(cql)
         answer = self.neo4j_conn.run(cql)[0]
         final_answer = movie_name + "的上映时间是" + str(answer) + "！"
         return final_answer
 
-    # 2 电影类型
+        # 2:nm 类型
+
     def get_movie_type(self):
         movie_name = self.get_movie_name()
-        cql = f"match(m:Movie)-[r:is]->(b) where m.title='{movie_name}' return b.gname"
+        cql = f"match(m:Movie)-[r:is]->(b) where m.title='{movie_name}' return b.name"
+        print(cql)
         answer = self.neo4j_conn.run(cql)
         answer_set = set(answer)
         answer_list = list(answer_set)
         answer = "、".join(answer_list)
-        final_answer = movie_name + "是" + str(answer) + "等类型的电影"
+        final_answer = movie_name + "是" + str(answer) + "等类型的电影！"
         return final_answer
 
-    # 3:nm 简介
+        # 3:nm 简介
+
     def get_movie_introduction(self):
         movie_name = self.get_movie_name()
-        cql = f"match(m:Movie)-[]->() where m.title='{movie_name}' return m.introduction"
+        # cql = f"match(m:Movie)-[]->() where m.title='{movie_name}' return m.introduction"
+        cql = f"MATCH (m:Movie) WHERE m.title='{movie_name}' RETURN m.introduction"
         print(cql)
         answer = self.neo4j_conn.run(cql)[0]
         final_answer = movie_name + "主要讲述了" + str(answer) + "！"
         return final_answer
 
-    # 4:nm 演员列表
+        # 4:nm 演员列表
+
     def get_movie_actor_list(self):
         movie_name = self.get_movie_name()
         cql = f"match(n:Person)-[r:actedin]->(m:Movie) where m.title='{movie_name}' return n.name"
@@ -121,7 +135,8 @@ class QuestionTemplate:
 
     def get_actor_info(self):
         actor_name = self.get_name('nr')
-        cql = f"match(n:Person)-[]->() where n.name='{actor_name}' return n.biography"
+        # cql = f"match(n:Person)-[]->() where n.name='{actor_name}' return n.biography"
+        cql = f"MATCH (n:Person) WHERE n.name='{actor_name}'  return n.biography"
         print(cql)
         answer = self.neo4j_conn.run(cql)[0]
         final_answer = answer
